@@ -2,7 +2,7 @@ version: '3.5'
 
 ## FOR TEST AND DEVELOPMENT ONLY, DO NOT USE IN PRODUCTION   ##
 
-name: hello
+name: vidre
 
 services:
   backend:

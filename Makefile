@@ -1,4 +1,4 @@
-# Copyright © 2023 Hello Storage Inc. All rights reserved.
+# Copyright © 2023 VidreBany Inc. All rights reserved.
 #
 export GO111MODULE=on
 

@@ -12,11 +12,11 @@ BUILD_DATE=$(date -u +%y%m%d)
 BUILD_VERSION=$(git describe --always)
 BUILD_TAG=${BUILD_DATE}-${BUILD_VERSION}
 BUILD_ID=${BUILD_TAG}-${BUILD_OS}
-BUILD_BIN=${2:-hello}
+BUILD_BIN=${2:-vidrebany}
 GO_BIN=${GO_BIN:-go}
 GO_VER=$($GO_BIN version)
 
-echo "Building Hello ${BUILD_ID} ($1)..."
+echo "Building VidreBany ${BUILD_ID} ($1)..."
 
 if [[ $1 == "debug" ]]; then
   BUILD_CMD=("$GO_BIN" build -tags=debug -ldflags "-X main.version=${BUILD_ID}-DEBUG" -o "build/${BUILD_BIN}" cmd/main.go)
