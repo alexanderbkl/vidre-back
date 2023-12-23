@@ -1,0 +1,13 @@
+# Exclude "build-time" ignore files.
+.dockerignore
+
+# Exclude git history and configuration.
+.gitignore
+
+# 
+.github
+
+/build/*
+/coverage.*
+Dockerfile
+docker-compose*
