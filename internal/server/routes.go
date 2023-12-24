@@ -32,4 +32,13 @@ func registerRoutes(router *gin.Engine) {
 	// routes
 	api.Ping(APIv1)
 
+	api.GetWorkers(APIv1)
+	api.CreateWorker(APIv1)
+	api.ModifyWorker(APIv1)
+	api.DeleteWorker(APIv1)
+	api.GetExtraHours(APIv1)
+	api.ToggleExtraHours(APIv1)
+	api.GetWorkDay(APIv1)
+	api.PostWorkDay(APIv1)
+
 }

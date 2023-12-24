@@ -13,6 +13,9 @@ type Tables map[string]interface{}
 // Entities contains database entities and their table names.
 var Entities = Tables{
 	Error{}.TableName():        &Error{},
+	Worker{}.TableName():       &Worker{},
+	ExtraHour{}.TableName():    &ExtraHour{},
+	WorkSchedule{}.TableName(): &WorkSchedule{},
 }
 
 // WaitForMigration waits for the database migration to be successful.
