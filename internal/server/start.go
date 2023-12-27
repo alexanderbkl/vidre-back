@@ -3,13 +3,13 @@ package server
 import (
 	"context"
 	"fmt"
-	"net/http"
-	"strings"
-	"time"
 	"github.com/alexanderbkl/vidre-back/internal/config"
 	"github.com/alexanderbkl/vidre-back/internal/middlewares"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"net/http"
+	"strings"
+	"time"
 )
 
 func Start(ctx context.Context) {
@@ -90,9 +90,6 @@ func Start(ctx context.Context) {
 	log.Infof("server: listening on %s [%s]", server.Addr, time.Since(start))
 	go StartHttp(server)
 
-
-	
-
 	// Graceful HTTP server shutdown.
 	<-ctx.Done()
 	log.Info("server: shutting down")
@@ -104,7 +101,9 @@ func Start(ctx context.Context) {
 
 // StartHttp starts the web server in http mode.
 func StartHttp(s *http.Server) {
-	if err := s.ListenAndServe(); err != nil {
+	certFile := "./cert.pem"
+	keyFile := "./key.pem"
+	if err := s.ListenAndServeTLS(certFile, keyFile); err != nil {
 		if err == http.ErrServerClosed {
 			log.Info("server: shutdown complete")
 		} else {
