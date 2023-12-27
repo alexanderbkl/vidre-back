@@ -13,21 +13,21 @@ dev:
 	air -c .air.toml
 # 
 develop:
-	$(DOCKER_COMPOSE) compose.dev.yml up -d --build --wait
+	$(DOCKER_COMPOSE) -f compose.dev.yml up -d --build --wait
 stop-develop:
-	$(DOCKER_COMPOSE) compose.dev.yml stop
+	$(DOCKER_COMPOSE) -f compose.dev.yml stop
 down-develop:
-	$(DOCKER_COMPOSE) compose.dev.yml down --volumes
+	$(DOCKER_COMPOSE) -f compose.dev.yml down --volumes
 production:
-	$(DOCKER_COMPOSE) compose.prod.yml up -d --build
+	$(DOCKER_COMPOSE) -f compose.prod.yml up -d --build
 stop-production:
-	$(DOCKER_COMPOSE) compose.prod.yml stop
+	$(DOCKER_COMPOSE) -f compose.prod.yml stop
 build:
 	scripts/docker/build.sh develop
 buildx:
 	scripts/docker/buildx.sh develop
 logs:
-	$(DOCKER_COMPOSE) logs
+	$(DOCKER_COMPOSE) logs -f
 build-go:
 	rm -f build/$(APP_NAME)
 	scripts/build.sh debug $(APP_NAME)
