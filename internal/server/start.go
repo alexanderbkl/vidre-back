@@ -35,6 +35,7 @@ func Start(ctx context.Context) {
 		AllowOrigins: []string{
 			"http://localhost:5173",
 			"http://localhost:3000",
+			"https://alexanderbkl.github.io",
 			"https://joinhello.app",
 			"https://staging.joinhello.app",
 			"https://www.staging.joinhello.app",
