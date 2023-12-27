@@ -46,6 +46,7 @@ func ToggleExtraHours(router *gin.RouterGroup) {
 			StartHour string `json:"start_hour"`
 			EndHour   string `json:"end_hour"`
 			Enabled   bool   `json:"enabled"`
+			IsEntry  bool   `json:"is_entry"`
 		}
 
 		if err := ctx.ShouldBindJSON(&payload); err != nil {
@@ -68,6 +69,7 @@ func ToggleExtraHours(router *gin.RouterGroup) {
 				DayType:   payload.DayType,
 				StartHour: payload.StartHour,
 				EndHour:   payload.EndHour,
+				IsEntry:   payload.IsEntry,
 			}
 			if err := extraHour.Create(); err != nil {
 				log.Errorf("cannot create extra hour: %s", err)
