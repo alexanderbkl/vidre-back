@@ -40,5 +40,7 @@ func registerRoutes(router *gin.Engine) {
 	api.ToggleExtraHours(APIv1)
 	api.GetWorkDay(APIv1)
 	api.PostWorkDay(APIv1)
+	api.DeleteWorkDay(APIv1)
+	api.UpdateWorkDay(APIv1)
 
 }

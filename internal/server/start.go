@@ -101,9 +101,7 @@ func Start(ctx context.Context) {
 
 // StartHttp starts the web server in http mode.
 func StartHttp(s *http.Server) {
-	certFile := "./cert.pem"
-	keyFile := "./key.pem"
-	if err := s.ListenAndServeTLS(certFile, keyFile); err != nil {
+	if err := s.ListenAndServe(); err != nil {
 		if err == http.ErrServerClosed {
 			log.Info("server: shutdown complete")
 		} else {
