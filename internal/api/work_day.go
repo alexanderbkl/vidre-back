@@ -74,6 +74,7 @@ func PostWorkDay(router *gin.RouterGroup) {
 			Type       string `json:"type"` // Type can be "entry", "startRest", "endRest", "exit"
 			Time       string `json:"time"` // Assuming time comes in as a string like "15:04"
 		}
+		headersWritten := false
 
 		if err := ctx.ShouldBindJSON(&payload); err != nil {
 			log.Errorf("Error binding JSON: %v", err)
@@ -120,17 +121,167 @@ func PostWorkDay(router *gin.RouterGroup) {
 		// Update the relevant time based on the type of payload
 		switch payload.Type {
 		case "entry":
-			workSchedule.EntryHour = timeParsed
+			if workSchedule.EntryHour.IsZero() {
+				workSchedule.EntryHour = timeParsed
+			} else if (!workSchedule.RestStartHour.IsZero() || !workSchedule.RestEndHour.IsZero()) && !workSchedule.ExitHour.IsZero() {
+				log.Errorf("Error: entry time cannot be set after exit time")
+				headersWritten = true
+				ctx.JSON(http.StatusInternalServerError, gin.H{"error": "NO SE PUEDE REGISTRAR LA ENTRADA DESPUÉS DE LA SALIDA"})
+			} else {
+				log.Errorf("Error: entry time cannot be set twice")
+				headersWritten = true
+				ctx.JSON(http.StatusInternalServerError, gin.H{"error": "NO SE PUEDE REGISTRAR LA ENTRADA DOS VECES"})
+			}
 		case "startRest":
-			workSchedule.RestStartHour = timeParsed
+			if workSchedule.RestStartHour.IsZero() && !workSchedule.EntryHour.IsZero() {
+				workSchedule.RestStartHour = timeParsed
+			} else if !workSchedule.RestStartHour.IsZero() && !workSchedule.RestEndHour.IsZero() {
+				log.Errorf("Error: startRest time cannot be set twice")
+				headersWritten = true
+				ctx.JSON(http.StatusInternalServerError, gin.H{"error": "NO SE PUEDE REGISTRAR EL INICIO DEL DESCANSO DOS VECES"})
+			} else if workSchedule.RestStartHour.IsZero() && workSchedule.EntryHour.IsZero() {
+				log.Errorf("Error: startRest time cannot be set without entry time")
+				headersWritten = true
+				ctx.JSON(http.StatusInternalServerError, gin.H{"error": "NO SE PUEDE REGISTRAR EL INICIO DEL DESCANSO SIN REGISTRAR LA ENTRADA"})
+			} else {
+				log.Errorf("Error: startRest time cannot be set after endRest time")
+				headersWritten = true
+				ctx.JSON(http.StatusInternalServerError, gin.H{"error": "NO SE PUEDE REGISTRAR EL INICIO DEL DESCANSO DESPUÉS DE REGISTRAR EL FIN DEL DESCANSO"})
+			}
 		case "endRest":
 			workSchedule.RestEndHour = timeParsed
+			// if payload.Type is endRest and startRest is not set, return error
+			if workSchedule.RestStartHour.IsZero() {
+				log.Errorf("Error: endRest time cannot be set without startRest time")
+				//time 30 minutes before the end of the rest in spanish timezones
+				time := timeParsed.Add(-30 * time.Minute)
+				//set the startRest time to the time calculated
+				workSchedule.RestStartHour = time
+				headersWritten = true
+				ctx.JSON(http.StatusInternalServerError, gin.H{"error": "NO HA INDICADO EL INICIO DEL DESCANSO, SE INDICA EL INICIO A LAS " + time.Format("15:04")})
+			} else if !workSchedule.ExitHour.IsZero() {
+				log.Errorf("Error: endRest time cannot be set after exit time")
+				headersWritten = true
+				ctx.JSON(http.StatusInternalServerError, gin.H{"error": "NO SE PUEDE REGISTRAR EL FIN DEL DESCANSO DESPUÉS DE LA SALIDA"})
+			} else if workSchedule.EntryHour.IsZero() {
+				log.Errorf("Error: endRest time cannot be set without entry time")
+				headersWritten = true
+				ctx.JSON(http.StatusInternalServerError, gin.H{"error": "NO SE PUEDE REGISTRAR EL FIN DEL DESCANSO SIN REGISTRAR LA ENTRADA"})
+			}
 		case "exit":
-			workSchedule.ExitHour = timeParsed
+			if workSchedule.RestEndHour.IsZero() {
+				log.Errorf("Error: exit time cannot be set without endRest time")
+				headersWritten = true
+				ctx.JSON(http.StatusInternalServerError, gin.H{"error": "NO SE PUEDE REGISTRAR LA SALIDA SIN REGISTRAR EL FIN DEL DESCANSO"})
+			} else if workSchedule.RestStartHour.IsZero() {
+				log.Errorf("Error: exit time cannot be set without startRest time")
+				headersWritten = true
+				ctx.JSON(http.StatusInternalServerError, gin.H{"error": "NO SE PUEDE REGISTRAR LA SALIDA SIN REGISTRAR EL INICIO DEL DESCANSO"})
+			} else if !workSchedule.ExitHour.IsZero() {
+				log.Errorf("Error: exit time cannot be set twice")
+				headersWritten = true
+				ctx.JSON(http.StatusInternalServerError, gin.H{"error": "NO SE PUEDE REGISTRAR LA SALIDA DOS VECES"})
+			} else if workSchedule.EntryHour.IsZero() {
+				log.Errorf("Error: exit time cannot be set without entry time")
+				headersWritten = true
+				ctx.JSON(http.StatusInternalServerError, gin.H{"error": "NO SE PUEDE REGISTRAR LA SALIDA SIN REGISTRAR LA ENTRADA"})
+			} else {
+				workSchedule.ExitHour = timeParsed
+			}
 		default:
 			ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid type"})
 			return
 		}
+
+		// Save the updated work schedule
+		if err := db.Db().Save(&workSchedule).Error; err != nil {
+			log.Errorf("Error updating work schedule: %v", err)
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Could not update work schedule"})
+			return
+		}
+
+		if !headersWritten {
+			ctx.JSON(http.StatusOK, gin.H{"message": "Work schedule updated successfully", "work_schedule": workSchedule})
+		}
+	})
+}
+
+// AddWorkDay adds a workday by worker code and workday.
+// POST /api/worker/work_day/add
+func AddWorkDay(router *gin.RouterGroup) {
+	router.POST("/worker/work_day/add", func(ctx *gin.Context) {
+		var payload struct {
+			WorkerCode    string `json:"worker_code"`
+			Date          string `json:"date"` // Assuming the date comes in as a string like "2006-01-02"
+			EnterHour     string `json:"enterHour"`
+			ExitHour      string `json:"exitHour"`
+			StartRestHour string `json:"startRestHour"`
+			EndRestHour   string `json:"endRestHour"`
+		}
+
+		if err := ctx.ShouldBindJSON(&payload); err != nil {
+			log.Errorf("Error binding JSON: %v", err)
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		workerId, err := query.GetWorkerIDFromCode(payload.WorkerCode)
+		if err != nil {
+			log.Errorf("Error getting worker ID from code: %v", err)
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Could not get worker ID from code"})
+			return
+		}
+
+		// Parse the date and time strings
+		date, err := time.Parse("2006-01-02", payload.Date)
+		if err != nil {
+			log.Errorf("Error parsing date: %v", err)
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid date format"})
+			return
+		}
+		enterHour, err := time.Parse("2006-01-02T15:04:05.000Z", payload.EnterHour)
+		if err != nil {
+			log.Errorf("Error parsing enterHour: %v", err)
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid time format"})
+			return
+		}
+		exitHour, err := time.Parse("2006-01-02T15:04:05.000Z", payload.ExitHour)
+		if err != nil {
+			log.Errorf("Error parsing exitHour: %v", err)
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid time format"})
+			return
+		}
+		startRestHour, err := time.Parse("2006-01-02T15:04:05.000Z", payload.StartRestHour)
+		if err != nil {
+			log.Errorf("Error parsing startRestHour: %v", err)
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid time format"})
+			return
+		}
+		endRestHour, err := time.Parse("2006-01-02T15:04:05.000Z", payload.EndRestHour)
+		if err != nil {
+			log.Errorf("Error parsing endRestHour: %v", err)
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid time format"})
+			return
+		}
+
+		// Find or initialize the work schedule for the worker on the given date
+		var workSchedule entity.WorkSchedule
+		result := db.Db().FirstOrCreate(&workSchedule, entity.WorkSchedule{
+			WorkerID: workerId,
+			Date:     date,
+		})
+
+		if result.Error != nil {
+			log.Errorf("Error finding or creating work schedule: %v", result.Error)
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Could not find or create work schedule"})
+			return
+		}
+
+		// Update the relevant time based on the type of payload
+		workSchedule.EntryHour = enterHour
+		workSchedule.ExitHour = exitHour
+		workSchedule.RestStartHour = startRestHour
+		workSchedule.RestEndHour = endRestHour
 
 		// Save the updated work schedule
 		if err := db.Db().Save(&workSchedule).Error; err != nil {
