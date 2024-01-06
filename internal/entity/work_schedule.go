@@ -12,8 +12,10 @@ type WorkSchedule struct {
 	Date         time.Time      `gorm:"type:date;not null" json:"date"`
 	EntryHour    time.Time      `gorm:"type:time;not null" json:"entry_hour"`
 	ExitHour     time.Time      `gorm:"type:time;not null" json:"exit_hour"`
-	RestStartHour time.Time     `gorm:"type:time;not null" json:"rest_start_hour"`
-	RestEndHour   time.Time     `gorm:"type:time;not null" json:"rest_end_hour"`
+	BreakfastStartHour time.Time     `gorm:"type:time" json:"breakfast_start_hour"`
+	BreakfastEndHour   time.Time     `gorm:"type:time" json:"breakfast_end_hour"`
+	LunchStartHour time.Time     `gorm:"type:time" json:"lunch_start_hour"`
+	LunchEndHour   time.Time     `gorm:"type:time" json:"lunch_end_hour"`
 	CreatedAt    time.Time      `json:"created_at"`
 	UpdatedAt    time.Time      `json:"updated_at"`
 	DeletedAt    gorm.DeletedAt `gorm:"index" json:"deleted_at"`
