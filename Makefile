@@ -31,6 +31,8 @@ logs:
 build-go:
 	rm -f build/$(APP_NAME)
 	scripts/build.sh debug $(APP_NAME)
+deploy:
+	scripts/deploy.sh
 test:
 	$(info Running all Go tests...)
 	$(GOTEST) -parallel 1 -count 1 -cpu 1 -tags slow -timeout 20m ./pkg/... ./internal/...

@@ -7,6 +7,8 @@
 *.dll
 *.so
 *.dylib
+id_rsa
+id_rsa.pub
 
 # Test binary, built with `go test -c`
 *.test
