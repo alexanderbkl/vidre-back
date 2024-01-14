@@ -106,10 +106,23 @@ func PostWorkDay(router *gin.RouterGroup) {
 
 		// Find or initialize the work schedule for the worker on the given date
 		var workSchedule entity.WorkSchedule
+		var workSchedulePreviousDay entity.WorkSchedule
 		log.Printf("Worker ID: %v", workerId)
 		result := db.Db().FirstOrCreate(&workSchedule, entity.WorkSchedule{
 			WorkerID: workerId,
 			Date:     date,
+		})
+
+		if result.Error != nil {
+			log.Errorf("Error finding or creating work schedule: %v", result.Error)
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Could not find or create work schedule"})
+			return
+		}
+
+		// Find the work schedule for the worker on the previous day
+		result = db.Db().FirstOrCreate(&workSchedulePreviousDay, entity.WorkSchedule{
+			WorkerID: workerId,
+			Date:     date.AddDate(0, 0, -1),
 		})
 
 		if result.Error != nil {
@@ -123,6 +136,12 @@ func PostWorkDay(router *gin.RouterGroup) {
 		case "entry":
 			if workSchedule.EntryHour.IsZero() {
 				workSchedule.EntryHour = timeParsed
+				if workSchedulePreviousDay.ExitHour.IsZero() && !workSchedulePreviousDay.EntryHour.IsZero() {
+					// it means that the worker has not exited the previous day
+					log.Errorf("Error: entry time cannot be set without exit time")
+					headersWritten = true
+					ctx.JSON(http.StatusInternalServerError, gin.H{"error": "NO HA MARCADO SALIDA EN EL DIA DE AYER, COMUNIQUE LA SALIDA A GERENCIA"})
+				}
 			} else if !workSchedule.ExitHour.IsZero() {
 				log.Errorf("Error: entry time cannot be set after exit time")
 				headersWritten = true
@@ -144,9 +163,11 @@ func PostWorkDay(router *gin.RouterGroup) {
 					headersWritten = true
 					ctx.JSON(http.StatusInternalServerError, gin.H{"error": "NO SE PUEDE REGISTRAR EL INICIO DEL DESCANSO DOS VECES"})
 				} else if workSchedule.BreakfastStartHour.IsZero() && workSchedule.EntryHour.IsZero() {
-					log.Errorf("Error: startRest time cannot be set without entry time")
+					//log.Errorf("Error: startRest time cannot be set without entry time")
 					headersWritten = true
-					ctx.JSON(http.StatusInternalServerError, gin.H{"error": "NO SE PUEDE REGISTRAR EL INICIO DEL DESCANSO SIN REGISTRAR LA ENTRADA"})
+					workSchedule.EntryHour = timeParsed
+					workSchedule.BreakfastStartHour = timeParsed
+					ctx.JSON(http.StatusInternalServerError, gin.H{"error": "NO HA MARCADO ENTRADA, COMUNIQUE LA ENTRADA A GERENCIA"})
 				} else {
 					log.Errorf("Error: startRest time cannot be set after endRest time")
 					headersWritten = true
@@ -161,9 +182,11 @@ func PostWorkDay(router *gin.RouterGroup) {
 					headersWritten = true
 					ctx.JSON(http.StatusInternalServerError, gin.H{"error": "NO SE PUEDE REGISTRAR EL INICIO DEL DESCANSO DOS VECES"})
 				} else if workSchedule.LunchStartHour.IsZero() && workSchedule.EntryHour.IsZero() {
-					log.Errorf("Error: startRest time cannot be set without entry time")
+					//log.Errorf("Error: startRest time cannot be set without entry time")
 					headersWritten = true
-					ctx.JSON(http.StatusInternalServerError, gin.H{"error": "NO SE PUEDE REGISTRAR EL INICIO DEL DESCANSO SIN REGISTRAR LA ENTRADA"})
+					workSchedule.EntryHour = timeParsed
+					workSchedule.LunchStartHour = timeParsed
+					ctx.JSON(http.StatusInternalServerError, gin.H{"error": "NO HA MARCADO ENTRADA, COMUNIQUE LA ENTRADA A GERENCIA"})
 				} else {
 					log.Errorf("Error: startRest time cannot be set after endRest time")
 					headersWritten = true
@@ -175,7 +198,25 @@ func PostWorkDay(router *gin.RouterGroup) {
 			if workSchedule.EntryHour.IsZero() {
 				log.Errorf("Error: endRest time cannot be set without entry time")
 				headersWritten = true
-				ctx.JSON(http.StatusInternalServerError, gin.H{"error": "NO SE PUEDE REGISTRAR EL FIN DEL DESCANSO SIN REGISTRAR LA ENTRADA"})
+				time := timeParsed.Add(-30 * time.Minute)
+				if workSchedule.BreakfastStartHour.IsZero() && workSchedule.BreakfastEndHour.IsZero() {
+					workSchedule.EntryHour = timeParsed
+					workSchedule.BreakfastStartHour = time
+					workSchedule.BreakfastEndHour = timeParsed
+					ctx.JSON(http.StatusInternalServerError, gin.H{"error": "NO HA MARCADO ENTRADA, COMUNIQUE LA ENTRADA A GERENCIA, SE INDICA INICIO DEL PRIMER DESCANSO A LAS " + time.Format("15:04")})
+				} else if !workSchedule.BreakfastStartHour.IsZero() && workSchedule.BreakfastEndHour.IsZero() {
+					workSchedule.BreakfastEndHour = timeParsed
+					ctx.JSON(http.StatusInternalServerError, gin.H{"error": "NO HA MARCADO EL FIN DEL PRIMER DESCANSO, SE INDICA EL FIN A LAS " + time.Format("15:04")})
+				} else if !workSchedule.BreakfastStartHour.IsZero() && !workSchedule.BreakfastEndHour.IsZero() && workSchedule.LunchStartHour.IsZero() {
+					workSchedule.LunchStartHour = timeParsed
+					ctx.JSON(http.StatusInternalServerError, gin.H{"error": "NO HA MARCADO EL INICIO DEL SEGUNDO DESCANSO, SE INDICA EL INICIO A LAS " + time.Format("15:04")})
+				} else if !workSchedule.BreakfastStartHour.IsZero() && !workSchedule.BreakfastEndHour.IsZero() && !workSchedule.LunchStartHour.IsZero() && workSchedule.LunchEndHour.IsZero() {
+					workSchedule.LunchEndHour = timeParsed
+					ctx.JSON(http.StatusInternalServerError, gin.H{"error": "NO HA MARCADO EL FIN DEL SEGUNDO DESCANSO, SE INDICA EL FIN A LAS " + time.Format("15:04")})
+				} else {
+					ctx.JSON(http.StatusInternalServerError, gin.H{"error": "NO HA MARCADO ENTRADA, COMUNIQUE LA ENTRADA A ADMINISTRADORES"})
+				}
+
 			} else if workSchedule.BreakfastStartHour.IsZero() {
 				log.Errorf("Error: endRest time cannot be set without startRest time")
 				//time 30 minutes before the end of the rest in spanish timezones
@@ -228,14 +269,14 @@ func PostWorkDay(router *gin.RouterGroup) {
 				headersWritten = true
 				ctx.JSON(http.StatusInternalServerError, gin.H{"error": "NO SE PUEDE REGISTRAR LA SALIDA SIN REGISTRAR LA ENTRADA"})
 				/*
-			} else if workSchedule.BreakfastEndHour.IsZero() || workSchedule.LunchEndHour.IsZero() {
-				log.Errorf("Error: exit time cannot be set without endRest time")
-				headersWritten = true
-				ctx.JSON(http.StatusInternalServerError, gin.H{"error": "NO SE PUEDE REGISTRAR LA SALIDA SIN REGISTRAR EL FIN DEL DESCANSO"})
-			} else if workSchedule.BreakfastStartHour.IsZero() || workSchedule.LunchStartHour.IsZero() {
-				log.Errorf("Error: exit time cannot be set without startRest time")
-				headersWritten = true
-				ctx.JSON(http.StatusInternalServerError, gin.H{"error": "NO SE PUEDE REGISTRAR LA SALIDA SIN REGISTRAR EL INICIO DEL DESCANSO"})
+					} else if workSchedule.BreakfastEndHour.IsZero() || workSchedule.LunchEndHour.IsZero() {
+						log.Errorf("Error: exit time cannot be set without endRest time")
+						headersWritten = true
+						ctx.JSON(http.StatusInternalServerError, gin.H{"error": "NO SE PUEDE REGISTRAR LA SALIDA SIN REGISTRAR EL FIN DEL DESCANSO"})
+					} else if workSchedule.BreakfastStartHour.IsZero() || workSchedule.LunchStartHour.IsZero() {
+						log.Errorf("Error: exit time cannot be set without startRest time")
+						headersWritten = true
+						ctx.JSON(http.StatusInternalServerError, gin.H{"error": "NO SE PUEDE REGISTRAR LA SALIDA SIN REGISTRAR EL INICIO DEL DESCANSO"})
 				*/
 			} else if !workSchedule.ExitHour.IsZero() {
 				log.Errorf("Error: exit time cannot be set twice")
