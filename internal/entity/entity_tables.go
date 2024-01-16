@@ -16,6 +16,7 @@ var Entities = Tables{
 	Worker{}.TableName():       &Worker{},
 	ExtraHour{}.TableName():    &ExtraHour{},
 	WorkSchedule{}.TableName(): &WorkSchedule{},
+	Festivo{}.TableName():      &Festivo{},
 }
 
 // WaitForMigration waits for the database migration to be successful.
