@@ -12,23 +12,20 @@
 <!-- PROJECT LOGO -->
 <br />
 <div align="center">
-  <a href="https://github.com/Hello-Storage/hello-back">
+  <a href="https://github.com/alexanderbkl/vidre-back">
     <img src="assets/imgs/logo.jpg" alt="Logo" width="100" height="100">
   </a>
 
-<h3 align="center">Hello Decentralized (Backend)</h3>
+<h3 align="center">VidreBany (Backend)</h3>
 
   <p align="center">
-    Decentralized storage protocol
-    <br />
-    <a href="https://github.com/Hello-Storage/hello-back"><strong>Explore the docs »</strong></a>
+    Factory management system
     <br />
     <br />
-    <a href="https://github.com/Hello-Storage/hello-back">View Demo</a>
     ·
-    <a href="https://github.com/Hello-Storage/hello-back/issues">Report Bug</a>
+    <a href="https://github.com/alexanderbkl/vidre-back/issues">Report Bug</a>
     ·
-    <a href="https://github.com/Hello-Storage/hello-back/issues">Request Feature</a>
+    <a href="https://github.com/alexanderbkl/vidre-back/issues">Request Feature</a>
   </p>
 </div>
 
@@ -64,8 +61,7 @@
 
 <!-- ABOUT THE PROJECT -->
 ## About The Project
-**[hello.app](https://hello.app)**
-building fully decentralized storage protocol!
+**[vidrebany.com](https://vidrebany.com)**
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 
@@ -97,7 +93,7 @@ This is an example of how to list things you need to use the software and how to
 
 1. Clone the repo
    ```sh
-   git clone https://github.com/Hello-Storage/hello-back.git
+   git clone https://github.com/alexanderbkl/vidre-back.git
    ```
 2. create <b>.env</b> file from <b>.env.example</b>
 3. run docker
@@ -128,7 +124,7 @@ _For more examples, please refer to the [Documentation](https://example.com)_
 - [ ] Feature 3
     - [ ] Nested Feature
 
-See the [open issues](https://github.com/Hello-Storage/hello-back/issues) for a full list of proposed features (and known issues).
+See the [open issues](https://github.com/alexanderbkl/vidre-back/issues) for a full list of proposed features (and known issues).
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -166,15 +162,6 @@ Distributed under the MIT License. See `LICENSE.txt` for more information.
 
 
 
-<!-- CONTACT -->
-## ☎️ Contact
-
-Hello Decentralized - [@helloapp](https://twitter.com/joinhelloapp) - team@hello.app
-
-Project Link: [https://hello.app/](https://hello.app/)
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
 
 
 <!-- ACKNOWLEDGMENTS -->
@@ -193,18 +180,7 @@ Project Link: [https://hello.app/](https://hello.app/)
 
 <!-- MARKDOWN LINKS & IMAGES -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
-[contributors-shield]: https://img.shields.io/github/contributors/Hello-Storage/hello-back.svg?style=for-the-badge
-[contributors-url]: https://github.com/Hello-Storage/hello-back/graphs/contributors
-[forks-shield]: https://img.shields.io/github/forks/Hello-Storage/hello-back.svg?style=for-the-badge
-[forks-url]: https://github.com/Hello-Storage/hello-back/network/members
-[stars-shield]: https://img.shields.io/github/stars/Hello-Storage/hello-back.svg?style=for-the-badge
-[stars-url]: https://github.com/Hello-Storage/hello-back/stargazers
-[issues-shield]: https://img.shields.io/github/issues/Hello-Storage/hello-back.svg?style=for-the-badge
-[issues-url]: https://github.com/Hello-Storage/hello-back/issues
-[license-shield]: https://img.shields.io/github/license/Hello-Storage/hello-back.svg?style=for-the-badge
-[license-url]: https://github.com/Hello-Storage/hello-back/blob/master/LICENSE.txt
-[linkedin-shield]: https://img.shields.io/badge/-LinkedIn-black.svg?style=for-the-badge&logo=linkedin&colorB=555
-[linkedin-url]: https://www.linkedin.com/company/hellostorage
+
 [product-screenshot]: images/screenshot.png
 [Go]: https://img.shields.io/badge/go-20232A?style=for-the-badge&logo=go
 [Go-url]: https://go.dev/
